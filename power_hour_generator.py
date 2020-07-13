@@ -5,7 +5,7 @@ from moviepy import editor
 
 DEFAULT_SOURCE_FOLDER = 'source_video'
 DEFAULT_CONFIG_PATH = 'power_hour.cfg'
-DEFAULT_TRANSITION_FILE_PATH = 'transition.mkv'
+DEFAULT_TRANSITION_FILE_PATH = 'transition.avi'
 DEFAULT_OUTFILE = 'out.avi'
 DEFAULT_WIDTH = 1280
 DEFAULT_HEIGHT = 720
