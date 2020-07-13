@@ -1,7 +1,0 @@
-Quick job that creates a power hour playlist from a folder of videos
-
-Basic requirements:
-
-1. source_video folder with (ideally) 60 videos
-2. transition clip -- a short clip ideally around 5-6 seconds long that will play between videos
-3. `python power_hour_generator.py`
