@@ -7,8 +7,8 @@ DEFAULT_SOURCE_FOLDER = 'source_video'
 DEFAULT_CONFIG_PATH = 'power_hour.cfg'
 DEFAULT_TRANSITION_FILE_PATH = 'transition.avi'
 DEFAULT_OUTFILE = 'out.avi'
-DEFAULT_WIDTH = 1280
-DEFAULT_HEIGHT = 720
+DEFAULT_WIDTH = 1920
+DEFAULT_HEIGHT = 1080
 DEFAULT_CONFIG_DELIMITER = '|'
 
 
@@ -48,12 +48,12 @@ class PowerHourGenerator(object):
         transition_clip = transition_clip.resize(width=DEFAULT_WIDTH, height=DEFAULT_HEIGHT)
 
         if transition_clip.duration > 6:
-            print 'Your transition is longer than 6 seconds. For best results, trim the clip to 5-6 seconds.'
+            print('Your transition is longer than 6 seconds. For best results, trim the clip to 5-6 seconds.')
 
         padding = 3
         list_of_clips = []
         for i, clip_name in enumerate(listdir(DEFAULT_SOURCE_FOLDER)):
-            print 'Processing: {} -- {}'.format(i, clip_name)
+            print('Processing: {} -- {}'.format(i, clip_name))
             clip_path = '{}/{}'.format(self.source_folder, clip_name)
             raw_clip = editor.VideoFileClip(clip_path)
 
@@ -64,10 +64,10 @@ class PowerHourGenerator(object):
             # if there is a specific starting point configured, use that instead
             if clip_name in video_to_config_map:
                 if CONFIG_DELIMITER in clip_name:
-                    print 'Video {} contains config delimiter character {}. To correct, either rename video or change delimiter'.format(
+                    print('Video {} contains config delimiter character {}. To correct, either rename video or change delimiter'.format(
                         clip_name,
                         CONFIG_DELIMITER
-                    )
+                    ))
                     raise RuntimeError('Video name contains config delimiter character.')
                 start_point = video_to_config_map[clip_name]
 
