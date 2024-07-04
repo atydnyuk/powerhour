@@ -5,7 +5,7 @@ from moviepy import editor
 
 DEFAULT_SOURCE_FOLDER = 'source_video'
 DEFAULT_CONFIG_PATH = 'power_hour.cfg'
-DEFAULT_TRANSITION_FILE_PATH = 'transition.avi'
+DEFAULT_TRANSITION_FILE_PATH = 'transition.mp4'
 DEFAULT_OUTFILE = 'out.avi'
 DEFAULT_WIDTH = 1920
 DEFAULT_HEIGHT = 1080
@@ -39,20 +39,15 @@ class PowerHourGenerator(object):
         if self.config_path:
             video_to_config_map = self.init_config()
 
-        # the number overlay for the initial transition  
-        first_text_clip_part = editor.TextClip(str(1), color='white', fontsize=36).set_position((10, 10))
-        first_text_clip = first_text_clip_part.on_color(size=(50, 50), color=(0,0,0), pos=(10,10), col_opacity=0.6)
+        transition_clip = editor.VideoFileClip(self.transition_path)
+        resized_transition_clip = transition_clip.resize(width=self.width, height=self.height)
 
-        transition_path = '{}'.format(DEFAULT_TRANSITION_FILE_PATH)
-        transition_clip = editor.VideoFileClip(transition_path)
-        transition_clip = transition_clip.resize(width=DEFAULT_WIDTH, height=DEFAULT_HEIGHT)
-
-        if transition_clip.duration > 6:
+        if resized_transition_clip.duration > 6:
             print('Your transition is longer than 6 seconds. For best results, trim the clip to 5-6 seconds.')
 
         padding = 3
         list_of_clips = []
-        for i, clip_name in enumerate(listdir(DEFAULT_SOURCE_FOLDER)):
+        for i, clip_name in enumerate(listdir(self.source_folder)):
             print('Processing: {} -- {}'.format(i, clip_name))
             clip_path = '{}/{}'.format(self.source_folder, clip_name)
             raw_clip = editor.VideoFileClip(clip_path)
@@ -72,32 +67,45 @@ class PowerHourGenerator(object):
                 start_point = video_to_config_map[clip_name]
 
             # these are always going to be 60 secs long - length of transition so that everything takes exactly an hour
-            clip = editor.VideoFileClip(clip_path).subclip(t_start=start_point, t_end=start_point + 60 - transition_clip.duration)
-            clip = clip.resize(width=self.width, height=self.height)
-            list_of_clips.append(clip)
+            clip = editor.VideoFileClip(clip_path).subclip(t_start=start_point, t_end=start_point + 60 - resized_transition_clip.duration)
+            resized_clip = clip.resize(width=self.width, height=self.height)
+            if resized_clip.w != self.width or resized_clip.h != self.height:
+                print(f"Resizing did not work for {resized_clip.filename}, the dimensions are still {resized_clip.w}x{resized_clip.h}")
+
+            list_of_clips.append(resized_clip)
 
         list_with_transitions = []
 
         for i, video in enumerate(list_of_clips):
             # create a new text clip with the current number on each loop
-            text_clip = editor.TextClip(str(i+1), color='white', fontsize=36).on_color(
+            number_text_clip = editor.TextClip(str(i+1), color='white', fontsize=36).on_color(
                 size=(50, 50), color=(0,0,0), pos=(0,0), col_opacity=0.6
             ).set_position(('left', 'top'))
 
+            # create a name clip with the video name
+            video_name = video.filename.split("/")[1]
+            video_name = " ".join(video_name.split(".")[:-1])
+            print(video_name)
+            name_text_clip = editor.TextClip(video_name, color='white', fontsize=36, font="Arial-Unicode-MS").on_color(
+                size=(1000, 50), color=(0,0,0), pos=(100,0), col_opacity=0.6
+            ).set_position(('right', 'top'))
+
             # TODO: figure out why I have to re-instantiate the transition clip each time for this to work
-            transition_clip = editor.VideoFileClip(transition_path)
-            transition_clip = transition_clip.resize(width=self.width, height=self.height)
-            transition_clip_with_number = editor.CompositeVideoClip([transition_clip, text_clip])
-            transition_clip_with_number.duration = transition_clip.duration
+            transition_clip = editor.VideoFileClip(self.transition_path)
+            resized_transition_clip = transition_clip.resize(width=self.width, height=self.height)
+            
+            transition_clip_with_number = editor.CompositeVideoClip([resized_transition_clip, number_text_clip])
+            transition_clip_with_number.duration = resized_transition_clip.duration
             list_with_transitions.append(transition_clip_with_number)
 
             # render the video with the number
-            video_clip_with_number = editor.CompositeVideoClip([video, text_clip])
+            video_clip_with_number = editor.CompositeVideoClip([video, number_text_clip, name_text_clip.set_start(30)])
             video_clip_with_number.duration = video.duration
-            video_clip_with_number = video_clip_with_number.resize(width=self.width, height=self.height)
+            #resized_video_clip_with_number = video_clip_with_number.resize(width=self.width, height=self.height)
             list_with_transitions.append(video_clip_with_number.fadeout(padding).audio_fadeout(padding))
+            break
         final_video = editor.concatenate_videoclips(list_with_transitions, padding=0, method='compose')
-        final_video.write_videofile(DEFAULT_OUTFILE, fps=24, codec='libx264')
+        final_video.write_videofile(self.outfile, fps=24, codec='libx264')
 
 
 def main():
