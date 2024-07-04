@@ -103,7 +103,7 @@ class PowerHourGenerator(object):
             video_clip_with_number.duration = video.duration
             #resized_video_clip_with_number = video_clip_with_number.resize(width=self.width, height=self.height)
             list_with_transitions.append(video_clip_with_number.fadeout(padding).audio_fadeout(padding))
-            break
+
         final_video = editor.concatenate_videoclips(list_with_transitions, padding=0, method='compose')
         final_video.write_videofile(self.outfile, fps=24, codec='libx264')
 
