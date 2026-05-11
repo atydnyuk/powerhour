@@ -1,7 +1,10 @@
 from os import listdir
+import resource
 
 import argparse
 from moviepy import editor
+from moviepy.config import change_settings
+change_settings({"IMAGEMAGICK_BINARY": "magick"})
 
 DEFAULT_SOURCE_FOLDER = 'source_video'
 DEFAULT_CONFIG_PATH = 'power_hour.cfg'
@@ -35,6 +38,9 @@ class PowerHourGenerator(object):
         return config
 
     def run(self):
+        soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+        resource.setrlimit(resource.RLIMIT_NOFILE, (min(hard, 4096), hard))
+
         video_to_config_map = {}
         if self.config_path:
             video_to_config_map = self.init_config()
@@ -58,16 +64,16 @@ class PowerHourGenerator(object):
 
             # if there is a specific starting point configured, use that instead
             if clip_name in video_to_config_map:
-                if CONFIG_DELIMITER in clip_name:
+                if self.delimiter in clip_name:
                     print('Video {} contains config delimiter character {}. To correct, either rename video or change delimiter'.format(
                         clip_name,
-                        CONFIG_DELIMITER
+                        self.delimiter
                     ))
                     raise RuntimeError('Video name contains config delimiter character.')
                 start_point = video_to_config_map[clip_name]
 
             # these are always going to be 60 secs long - length of transition so that everything takes exactly an hour
-            clip = editor.VideoFileClip(clip_path).subclip(t_start=start_point, t_end=start_point + 60 - resized_transition_clip.duration)
+            clip = raw_clip.subclip(t_start=start_point, t_end=start_point + 60 - resized_transition_clip.duration)
             resized_clip = clip.resize(width=self.width, height=self.height)
             if resized_clip.w != self.width or resized_clip.h != self.height:
                 print(f"Resizing did not work for {resized_clip.filename}, the dimensions are still {resized_clip.w}x{resized_clip.h}")
